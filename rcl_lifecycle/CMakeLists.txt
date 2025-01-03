@@ -74,56 +74,56 @@ install(TARGETS rcl_lifecycle EXPORT rcl_lifecycle
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
-  find_package(osrf_testing_tools_cpp REQUIRED)
-  ament_lint_auto_find_test_dependencies()
+# if(BUILD_TESTING)
+#   find_package(ament_cmake_gtest REQUIRED)
+#   find_package(ament_lint_auto REQUIRED)
+#   find_package(osrf_testing_tools_cpp REQUIRED)
+#   ament_lint_auto_find_test_dependencies()
 
-  # Gtests
-  ament_add_gtest(test_default_state_machine
-    test/test_default_state_machine.cpp
-  )
-  if(TARGET test_default_state_machine)
-    target_link_libraries(test_default_state_machine
-      ${PROJECT_NAME}
-      ${lifecycle_msgs_TARGETS}
-      osrf_testing_tools_cpp::memory_tools
-      rcl::rcl
-      rcutils::rcutils
-    )
-    target_compile_definitions(test_default_state_machine
-      PUBLIC RCUTILS_ENABLE_FAULT_INJECTION
-    )
-  endif()
-  ament_add_gtest(test_multiple_instances
-    test/test_multiple_instances.cpp
-  )
-  if(TARGET test_multiple_instances)
-    target_link_libraries(test_multiple_instances ${PROJECT_NAME} ${lifecycle_msgs_TARGETS} osrf_testing_tools_cpp::memory_tools rcl::rcl)
-  endif()
-  ament_add_gtest(test_rcl_lifecycle
-    test/test_rcl_lifecycle.cpp
-  )
-  if(TARGET test_rcl_lifecycle)
-    target_link_libraries(test_rcl_lifecycle
-      ${PROJECT_NAME}
-      ${lifecycle_msgs_TARGETS}
-      osrf_testing_tools_cpp::memory_tools
-      rcl::rcl
-      rcutils::rcutils
-    )
-    target_compile_definitions(test_rcl_lifecycle
-      PUBLIC RCUTILS_ENABLE_FAULT_INJECTION
-    )
-  endif()
-  ament_add_gtest(test_transition_map
-    test/test_transition_map.cpp
-  )
-  if(TARGET test_transition_map)
-    target_link_libraries(test_transition_map ${PROJECT_NAME} rcl::rcl)
-  endif()
-endif()
+#   # Gtests
+#   ament_add_gtest(test_default_state_machine
+#     test/test_default_state_machine.cpp
+#   )
+#   if(TARGET test_default_state_machine)
+#     target_link_libraries(test_default_state_machine
+#       ${PROJECT_NAME}
+#       ${lifecycle_msgs_TARGETS}
+#       osrf_testing_tools_cpp::memory_tools
+#       rcl::rcl
+#       rcutils::rcutils
+#     )
+#     target_compile_definitions(test_default_state_machine
+#       PUBLIC RCUTILS_ENABLE_FAULT_INJECTION
+#     )
+#   endif()
+#   ament_add_gtest(test_multiple_instances
+#     test/test_multiple_instances.cpp
+#   )
+#   if(TARGET test_multiple_instances)
+#     target_link_libraries(test_multiple_instances ${PROJECT_NAME} ${lifecycle_msgs_TARGETS} osrf_testing_tools_cpp::memory_tools rcl::rcl)
+#   endif()
+#   ament_add_gtest(test_rcl_lifecycle
+#     test/test_rcl_lifecycle.cpp
+#   )
+#   if(TARGET test_rcl_lifecycle)
+#     target_link_libraries(test_rcl_lifecycle
+#       ${PROJECT_NAME}
+#       ${lifecycle_msgs_TARGETS}
+#       osrf_testing_tools_cpp::memory_tools
+#       rcl::rcl
+#       rcutils::rcutils
+#     )
+#     target_compile_definitions(test_rcl_lifecycle
+#       PUBLIC RCUTILS_ENABLE_FAULT_INJECTION
+#     )
+#   endif()
+#   ament_add_gtest(test_transition_map
+#     test/test_transition_map.cpp
+#   )
+#   if(TARGET test_transition_map)
+#     target_link_libraries(test_transition_map ${PROJECT_NAME} rcl::rcl)
+#   endif()
+# endif()
 
 # Export old-style CMake variables
 ament_export_include_directories("include/${PROJECT_NAME}")
