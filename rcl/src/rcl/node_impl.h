@@ -23,6 +23,8 @@
 #include "rcutils/types/hash_map.h"
 #include "rmw/types.h"
 
+#include <threads.h>
+
 struct rcl_node_impl_s
 {
   rcl_node_options_t options;
@@ -31,6 +33,9 @@ struct rcl_node_impl_s
   const char * logger_name;
   const char * fq_name;
   rcutils_hash_map_t registered_types_by_type_hash;
+  // Witty: entities of one node are created and destroyed from several threads
+  // (e.g. an executor dropping the last reference), so guard the type cache.
+  mtx_t registered_types_mutex;
 };
 
 #endif  // RCL__NODE_IMPL_H_

@@ -52,6 +52,11 @@ rcl_ret_t rcl_node_type_cache_init(rcl_node_t * node)
     return RCL_RET_OK;
   }
 
+  if (thrd_success != mtx_init(&node->impl->registered_types_mutex, mtx_plain)) {
+    RCL_SET_ERROR_MSG("Failed to initialize type cache mutex");
+    return RCL_RET_ERROR;
+  }
+
   rcutils_ret_t ret = rcutils_hash_map_init(
     &node->impl->registered_types_by_type_hash, 2, sizeof(rosidl_type_hash_t),
     sizeof(rcl_type_info_with_registration_count_t),
@@ -60,6 +65,7 @@ rcl_ret_t rcl_node_type_cache_init(rcl_node_t * node)
 
   if (RCUTILS_RET_OK != ret) {
     RCL_SET_ERROR_MSG("Failed to initialize type cache hash map");
+    mtx_destroy(&node->impl->registered_types_mutex);
     return RCL_RET_ERROR;
   }
 
@@ -105,11 +111,12 @@ rcl_ret_t rcl_node_type_cache_fini(rcl_node_t * node)
 
   rcutils_ret_t rcutils_ret =
     rcutils_hash_map_fini(&node->impl->registered_types_by_type_hash);
+  mtx_destroy(&node->impl->registered_types_mutex);
 
   return RCUTILS_RET_OK == rcutils_ret ? RCL_RET_OK : RCL_RET_ERROR;
 }
 
-rcl_ret_t rcl_node_type_cache_get_type_info(
+static rcl_ret_t get_type_info_unlocked(
   const rcl_node_t * node,
   const rosidl_type_hash_t * type_hash,
   rcl_type_info_t * type_info)
@@ -135,7 +142,7 @@ rcl_ret_t rcl_node_type_cache_get_type_info(
   return RCL_RET_ERROR;
 }
 
-rcl_ret_t rcl_node_type_cache_register_type(
+static rcl_ret_t register_type_unlocked(
   const rcl_node_t * node, const rosidl_type_hash_t * type_hash,
   const rosidl_runtime_c__type_description__TypeDescription * type_description,
   const rosidl_runtime_c__type_description__TypeSource__Sequence * type_description_sources)
@@ -198,7 +205,7 @@ rcl_ret_t rcl_node_type_cache_register_type(
   return RCL_RET_OK;
 }
 
-rcl_ret_t rcl_node_type_cache_unregister_type(
+static rcl_ret_t unregister_type_unlocked(
   const rcl_node_t * node,
   const rosidl_type_hash_t * type_hash)
 {
@@ -243,4 +250,46 @@ rcl_ret_t rcl_node_type_cache_unregister_type(
   }
 
   return RCL_RET_OK;
+}
+
+// Witty: the public entry points serialize access to the node's type cache.
+// The node and its impl are checked before taking the lock it lives in.
+
+rcl_ret_t rcl_node_type_cache_get_type_info(
+  const rcl_node_t * node,
+  const rosidl_type_hash_t * type_hash,
+  rcl_type_info_t * type_info)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(node, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(node->impl, RCL_RET_NODE_INVALID);
+  mtx_lock(&node->impl->registered_types_mutex);
+  const rcl_ret_t ret = get_type_info_unlocked(node, type_hash, type_info);
+  mtx_unlock(&node->impl->registered_types_mutex);
+  return ret;
+}
+
+rcl_ret_t rcl_node_type_cache_register_type(
+  const rcl_node_t * node, const rosidl_type_hash_t * type_hash,
+  const rosidl_runtime_c__type_description__TypeDescription * type_description,
+  const rosidl_runtime_c__type_description__TypeSource__Sequence * type_description_sources)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(node, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(node->impl, RCL_RET_NODE_INVALID);
+  mtx_lock(&node->impl->registered_types_mutex);
+  const rcl_ret_t ret = register_type_unlocked(
+    node, type_hash, type_description, type_description_sources);
+  mtx_unlock(&node->impl->registered_types_mutex);
+  return ret;
+}
+
+rcl_ret_t rcl_node_type_cache_unregister_type(
+  const rcl_node_t * node,
+  const rosidl_type_hash_t * type_hash)
+{
+  RCL_CHECK_ARGUMENT_FOR_NULL(node, RCL_RET_INVALID_ARGUMENT);
+  RCL_CHECK_ARGUMENT_FOR_NULL(node->impl, RCL_RET_NODE_INVALID);
+  mtx_lock(&node->impl->registered_types_mutex);
+  const rcl_ret_t ret = unregister_type_unlocked(node, type_hash);
+  mtx_unlock(&node->impl->registered_types_mutex);
+  return ret;
 }
