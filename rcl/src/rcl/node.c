@@ -547,12 +547,16 @@ void rcl_node_type_description_service_handle_request(
     return;
   }
 
+  // Witty: type_info points into the type cache; hold its (recursive) lock
+  // until copied, as another thread may unregister the type meanwhile.
+  mtx_lock(&node->impl->registered_types_mutex);
   if (RCUTILS_RET_OK !=
     rcl_node_type_cache_get_type_info(node, &type_hash, &type_info))
   {
     rosidl_runtime_c__String__assign(
       &response->failure_reason,
       "Type not currently in use by this node");
+    mtx_unlock(&node->impl->registered_types_mutex);
     return;
   }
 
@@ -562,6 +566,7 @@ void rcl_node_type_description_service_handle_request(
     rosidl_runtime_c__String__assign(
       &response->failure_reason,
       "Failed to populate TypeDescription to response.");
+    mtx_unlock(&node->impl->registered_types_mutex);
     return;
   }
 
@@ -572,10 +577,12 @@ void rcl_node_type_description_service_handle_request(
       rosidl_runtime_c__String__assign(
         &response->failure_reason,
         "Failed to populate TypeSource_Sequence to response.");
+      mtx_unlock(&node->impl->registered_types_mutex);
       return;
     }
   }
 
+  mtx_unlock(&node->impl->registered_types_mutex);
   response->successful = true;
 }
 

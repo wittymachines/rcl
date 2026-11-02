@@ -52,7 +52,7 @@ rcl_ret_t rcl_node_type_cache_init(rcl_node_t * node)
     return RCL_RET_OK;
   }
 
-  if (thrd_success != mtx_init(&node->impl->registered_types_mutex, mtx_plain)) {
+  if (thrd_success != mtx_init(&node->impl->registered_types_mutex, mtx_plain | mtx_recursive)) {
     RCL_SET_ERROR_MSG("Failed to initialize type cache mutex");
     return RCL_RET_ERROR;
   }
